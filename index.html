@@ -1,60 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Leaflet JS</title>
+    <title>Project BC</title>
+
+    <!--css for leaflet-->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
     <style>
       #map {
         width:100%;
-        height:50vh
+        height:100vh
       }
-      #map-dua {
-        width:100%;
-        height:50vh
-      }
+      .info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+    }
+    .info h3 {
+        margin: 0 0 5px;
+        color: #777;
+    }
     </style>
   </head>
   <body>
-    <div id="map">
+    <div id = 'map'>
+
     </div>
-    <div id="map-dua">
-    </div>
+
   </body>
 </html>
+<!--Script for file source and leaflet js-->
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+<script src = 'kampung_berau.js'></script>
+<!--Script for Coding-->
 <script>
-  var map = L.map('map').setView([2.141725, 117.484784], 13);
-  var map2= L.map('map-dua').setView([2.141725, 117.484784], 13);
+  // connect map to js
+  var map = L.map('map').setView([2.141725, 117.484784], 10);
+
+  // add basemap
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap'
-    });
-  var Esri_WorldPhysical = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
-    	attribution: 'Tiles &copy; Esri &mdash; Source: US National Park Service',
-    	maxZoom: 20
     });
   var GoogleMaps = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       opacity: 1.0,
       attribution: 'Google Maps'
     });
-  osm.addTo(map2)
   GoogleMaps.addTo(map)
+  var PolygonKampung = L.geoJSON(polygon_kampung, {onEachFeature : addPopUpandEvents, style: kampungStyle})
+  PolygonKampung.addTo(map)
+  var baseMaps = {
+    'OSM' : osm,
+    'Google Maps' : GoogleMaps
+  };
 
-  var marker = L.marker([2.141725, 117.484784])
-  marker.bindPopup('Some Thing').openPopup().addTo(map)
+  var overlayMaps = {
+    'Kampung' : PolygonKampung
+  };
 
-  var circle = L.circle([2.141725, 117.484784], {
-    color: 'red',
-    fillColor: '#f03',
-    fillOpacity: 0.5,
-    radius: 500
-})
-  circle.bindPopup('I am a circle').openPopup().addTo(map)
-  function onMapClick() {
+  L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+  function addPopUpandEvents(feature, layer){
+    layer.on({
+      click : onMapClick,
+      mouseover : highlightFeature,
+      mouseout : resetHighlight
+    })
+  }
+  function popUpName(props){
+    console.log(props.DESA)
+  }
+  function colorMapping(d){
+    return d > 500  ? '#BD0026' :
+           d > 200  ? '#E31A1C' :
+           d > 100  ? '#FC4E2A' :
+           d > 50   ? '#FD8D3C' :
+           d > 20   ? '#FEB24C' :
+           d > 10   ? '#FED976' :
+                      '#FFEDA0';
+  }
+  function kampungStyle(feature){
+    return {
+      color :'#999',
+      weight : 1,
+      fillColor : colorMapping(feature.properties.LUAS_DESA),
+      fillOpacity : 0.7}
+  }
+  function onMapClick(e) {
+
     window.open("https://www.arcgis.com/apps/dashboards/b7c3a562cbba44d1af97860752c8bdc3");
-}
+  }
 
-  circle.on('click', onMapClick);
+  function highlightFeature(e) {
+    var layer = e.target;
+    // console.log(typeof layer)
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+    // this.bindPopup(layer.feature.properties.DESA)
+    info.update(layer.feature.properties);
+  }
+
+  function resetHighlight(e) {
+    PolygonKampung.resetStyle(e.target);
+    info.update();
+  }
+  var info = L.control();
+
+  info.onAdd = function (map) {
+      this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+      this.update();
+      return this._div;
+  };
+
+  // method that we will use to update the control based on feature properties passed
+  info.update = function (props) {
+    this._div.innerHTML ='<h3>Geoportal CSR Berau Coal</h3>' + (props ?
+     '<b>' + props.DESA + '</b><br />' + props.LUAS_DESA + 'km<sup>2</sup>'
+     : 'Pilih Kampung');
+  };
+
+  info.addTo(map);
 </script>

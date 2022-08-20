@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Leaflet JS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css" integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ==" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ==" crossorigin=""></script>
+    <style>
+      #map {
+        width:100%;
+        height:50vh
+      }
+      #map-dua {
+        width:100%;
+        height:50vh
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map">
+    </div>
+    <div id="map-dua">
+    </div>
+  </body>
+</html>
+<script>
+  var map = L.map('map').setView([2.141725, 117.484784], 13);
+  var map2= L.map('map-dua').setView([2.141725, 117.484784], 13);
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+    });
+  var Esri_WorldPhysical = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+    	attribution: 'Tiles &copy; Esri &mdash; Source: US National Park Service',
+    	maxZoom: 20
+    });
+  var GoogleMaps = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      opacity: 1.0,
+      attribution: 'Google Maps'
+    });
+  osm.addTo(map2)
+  GoogleMaps.addTo(map)
+
+  var marker = L.marker([2.141725, 117.484784])
+  marker.bindPopup('Some Thing').openPopup().addTo(map)
+
+  var circle = L.circle([2.141725, 117.484784], {
+    color: 'red',
+    fillColor: '#f03',
+    fillOpacity: 0.5,
+    radius: 500
+})
+  circle.bindPopup('I am a circle').openPopup().addTo(map)
+  function onMapClick() {
+    window.open("https://www.arcgis.com/apps/dashboards/b7c3a562cbba44d1af97860752c8bdc3");
+}
+
+  circle.on('click', onMapClick);
+</script>
